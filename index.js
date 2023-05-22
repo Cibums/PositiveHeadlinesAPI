@@ -16,34 +16,58 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-app.get('/get/:collection_name/:domain', (req,res) => {
+app.get('/get/:domain/:title', (req,res) => {
     (async ()=> {
+
+        var utf8Domain = encodeURIComponent(req.params.domain);
+        var enc_domain = btoa(utf8Domain);
+        var utf8Title = encodeURIComponent(req.params.title);
+        var enc_title = btoa(utf8Title);
+
         try{
-            const document = db.collection(req.params.collection_name).doc(req.params.domain);
+            const document = db.collection(enc_domain).doc(enc_title);
             let item = await document.get();
             let response = item.data();
             return res.status(200).send(response);
         }catch(error){
             console.log(error);
-            return res.status(500).send(error);
+            if(addTitle()){
+                const document = db.collection(enc_domain).doc(enc_title);
+                let item = await document.get();
+                let response = item.data();
+                return res.status(200).send(response);
+            }
+            else{
+                return res.status(500).send(error);
+            }
         }
     })();
 });
 
-app.post('/post/:domain/:title', async (req,res) => {
+async function getGPTTitle(title){
+    return "ny titel";
+}
+
+async function addTitle(domain, title){
     try {
-        await db.collection("domain").doc(req.params.domain).set({
-            title: req.params.title,
-            response: "",
+        var nt = await getGPTTitle(title);
+
+        var utf8Domain = encodeURIComponent(domain);
+        var enc_domain = btoa(utf8Domain);
+        var utf8Title = encodeURIComponent(title);
+        var enc_title = btoa(utf8Title);
+
+        await db.collection(enc_domain).doc(enc_title).set({
+            newTitle: nt,
         });
         
-        console.log("Document successfully written!");
-        res.status(200).send('Document successfully written!');
+        console.log("New title saved in database");
+        return true;
     } catch (error) {
         console.error("Error writing document: ", error);
-        res.status(500).send('Error writing document: ' + error);
+        return false;
     }
-});
+}
 
 app.listen(port, ()=>{
     console.log("Listening to port: " + port);
