@@ -7,6 +7,7 @@ const port = process.env.PORT || 3000;
 
 const app = express();
 app.use(cors({origin: true}));
+app.use(express.json());
 
 var serviceAccount = require("./permissions.json");
 
