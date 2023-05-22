@@ -21,16 +21,6 @@ admin.initializeApp({
 const db = admin.firestore();
 
 try {
-    async function getDocument() {
-        const document = db.collection("system").doc("variables");
-        let item = await document.get();
-
-        if (!item.exists) {
-            let response = item.data();
-            prompt = response.prompt;
-        }
-    }
-
     getDocument();
 } catch (error) {
     console.log(error);
@@ -101,6 +91,16 @@ async function addTitle(domain, title, articleText){
     } catch (error) {
         console.error("Error writing document: ", error);
         return false;
+    }
+}
+
+async function getDocument() {
+    const document = db.collection("system").doc("variables");
+    let item = await document.get();
+
+    if (!item.exists) {
+        let response = item.data();
+        prompt = response.prompt;
     }
 }
 
