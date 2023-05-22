@@ -27,7 +27,7 @@ app.post('/title', async (req,res) => {
 
         let currentPrompt = item.exists ? item.data().prompt : prompt;
 
-        let titleData = await getTitleData(req.body.domain, req.body.title, req.body.articleText, currentPrompt);
+        let titleData = await getHeadlineFromDatabase(req.body.domain, req.body.title, req.body.articleText, currentPrompt);
         res.status(titleData.status).send(titleData.data);
 
     } catch(error) {
@@ -36,12 +36,12 @@ app.post('/title', async (req,res) => {
     }
 });
 
-async function getTitleData(domain, title, articleText, currentPrompt) {
+async function getHeadlineFromDatabase(domain, title, articleText, currentPrompt) {
     const document = db.collection(domain).doc(title);
     let item = await document.get();
 
     if (!item.exists) {
-        const success = await addTitle(domain, title, articleText, currentPrompt);
+        const success = await addHeadlineToDatabase(domain, title, articleText, currentPrompt);
         if (!success) throw new Error("Error adding title");
 
         item = await document.get();
@@ -51,7 +51,7 @@ async function getTitleData(domain, title, articleText, currentPrompt) {
     return { status: 200, data: item.data() };
 }
 
-async function addTitle(domain, title, articleText, currentPrompt){
+async function addHeadlineToDatabase(domain, title, articleText, currentPrompt){
     try {
         let newTitle = await getGPTTitle(articleText, currentPrompt);
         await db.collection(domain).doc(title).set({ newTitle });
