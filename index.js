@@ -31,7 +31,7 @@ app.get('/get/:domain/:title', (req,res) => {
             return res.status(200).send(response);
         }catch(error){
             console.log(error);
-            if(addTitle()){
+            if(await addTitle(req.params.domain, req.params.title)){
                 const document = db.collection(enc_domain).doc(enc_title);
                 let item = await document.get();
                 let response = item.data();
@@ -67,6 +67,10 @@ async function addTitle(domain, title){
         console.error("Error writing document: ", error);
         return false;
     }
+}
+
+function btoa(string){
+    return Buffer.from(string).toString('base64');
 }
 
 app.listen(port, ()=>{
