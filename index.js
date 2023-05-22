@@ -26,8 +26,10 @@ app.post('/title', async (req,res) => {
         let item = await document.get();
 
         let currentPrompt = item.exists ? item.data().prompt : prompt;
+        let enc_domain = btoa(encodeURIComponent(req.body.domain));
+        let enc_title = btoa(encodeURIComponent(req.body.title));
 
-        let titleData = await getHeadlineFromDatabase(req.body.domain, req.body.title, req.body.articleText, currentPrompt);
+        let titleData = await getHeadlineFromDatabase(enc_domain, enc_title, req.body.articleText, currentPrompt);
         res.status(titleData.status).send(titleData.data);
 
     } catch(error) {
@@ -36,12 +38,12 @@ app.post('/title', async (req,res) => {
     }
 });
 
-async function getHeadlineFromDatabase(domain, title, articleText, currentPrompt) {
-    const document = db.collection(domain).doc(title);
+async function getHeadlineFromDatabase(enc_domain, enc_title, articleText, currentPrompt) {
+    const document = db.collection(enc_domain).doc(enc_title);
     let item = await document.get();
 
     if (!item.exists) {
-        const success = await addHeadlineToDatabase(domain, title, articleText, currentPrompt);
+        const success = await addHeadlineToDatabase(enc_domain, enc_title, articleText, currentPrompt);
         if (!success) throw new Error("Error adding title");
 
         item = await document.get();
@@ -51,10 +53,10 @@ async function getHeadlineFromDatabase(domain, title, articleText, currentPrompt
     return { status: 200, data: item.data() };
 }
 
-async function addHeadlineToDatabase(domain, title, articleText, currentPrompt){
+async function addHeadlineToDatabase(enc_domain, enc_title, articleText, currentPrompt){
     try {
         let newTitle = await getGPTTitle(articleText, currentPrompt);
-        await db.collection(domain).doc(title).set({ newTitle });
+        await db.collection(enc_domain).doc(enc_title).set({ newTitle });
 
         console.log("New title saved in database");
         return true;
@@ -76,6 +78,10 @@ async function getGPTTitle(articleText, currentPrompt){
     });
 
     return completion.data.choices[0].message.content;
+}
+
+function btoa(string){
+    return Buffer.from(string).toString('base64');
 }
 
 app.listen(port, ()=>{
