@@ -28,18 +28,24 @@ app.get('/get/:domain/:title', (req,res) => {
             const document = db.collection(enc_domain).doc(enc_title);
             let item = await document.get();
             let response = item.data();
+
+            if(!item.exists){
+                if(await addTitle(req.params.domain, req.params.title)){
+                    const document = db.collection(enc_domain).doc(enc_title);
+                    let item = await document.get();
+                    let response = item.data();
+                    return res.status(201).send(response);
+                }
+                else{
+                    
+                }
+            }
+
             return res.status(200).send(response);
         }catch(error){
             console.log(error);
-            if(await addTitle(req.params.domain, req.params.title)){
-                const document = db.collection(enc_domain).doc(enc_title);
-                let item = await document.get();
-                let response = item.data();
-                return res.status(201).send(response);
-            }
-            else{
-                return res.status(500).send(error);
-            }
+            
+            return res.status(500).send(error);
         }
     })();
 });
