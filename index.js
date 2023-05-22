@@ -20,7 +20,6 @@ const db = admin.firestore();
 
 app.post('/title', (req,res) => {
     (async ()=> {
-
         var utf8Domain = encodeURIComponent(req.body.domain);
         var enc_domain = btoa(utf8Domain);
         var utf8Title = encodeURIComponent(req.body.title);
@@ -60,7 +59,7 @@ async function getGPTTitle(articleText){
 
     const completion = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
-        messages: [{"role": "user", "content": "Here's a news article. I don't know what language this is in, but give me a title of this article. The title should be in the language of the article and you should keep it short and informative. It should not be clickbait. The title should accurately describe the content of the article and you should try to make it as positive as possible. If the article is not a positive one, then try to make the title as positive as possible. But remember that the title should be accurate and truthful to the article's contents. That's the most important part. The title you give me should always be true, based on the articles's content. It's also very important that your response is only the title itself. You should only respond with the title. Nothing else than the title should be included in your response. Here's the article: " + articleText}]
+        messages: [{"role": "user", "content": "Here's a news article. I don't know what language this is in, but give me a title of this article. The title should be in the language of the article and you should keep it short and informative. It should not be clickbait. The title should accurately describe the content of the article and you should try to make it as positive as possible. If the article is not a positive one, then try to make the title as positive as possible. But remember that the title should be accurate and truthful to the article's contents. That's the most important part. The title you give me should always be true, based on the articles's content. It's also very important that your response is only the title itself. You should only respond with the title. Nothing else than the title should be included in your response. Do not include translations, or citation marks. Do not include anything in your response that is not the title itself. Here's the article: " + articleText}]
     });
 
     return completion.data.choices[0].message.content;
