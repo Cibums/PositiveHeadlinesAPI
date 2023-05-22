@@ -35,7 +35,7 @@ app.get('/get/:domain/:title', (req,res) => {
                 const document = db.collection(enc_domain).doc(enc_title);
                 let item = await document.get();
                 let response = item.data();
-                return res.status(200).send(response);
+                return res.status(201).send(response);
             }
             else{
                 return res.status(500).send(error);
