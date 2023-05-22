@@ -22,13 +22,12 @@ const db = admin.firestore();
 
 app.post('/title', (req,res) => {
     (async ()=> {
+        const document = db.collection("system").doc("variables");
+        let item = await document.get();
 
-        if(promptGottenOnce === false){
-            try {
-                getDocument();
-            } catch (error) {
-                console.log(error);
-            }
+        if (item.exists) {
+            let response = item.data();
+            prompt = response.prompt;
         }
 
         var utf8Domain = encodeURIComponent(req.body.domain);
@@ -94,16 +93,6 @@ async function addTitle(domain, title, articleText){
     } catch (error) {
         console.error("Error writing document: ", error);
         return false;
-    }
-}
-
-async function getDocument() {
-    const document = db.collection("system").doc("variables");
-    let item = await document.get();
-
-    if (item.exists) {
-        let response = item.data();
-        prompt = response.prompt;
     }
 }
 
