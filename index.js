@@ -11,7 +11,7 @@ app.use(express.json());
 
 const prompt = "Give me a headline to this article. Your response should be only the headline and nothing else. Here's the article: ";
 
-const serviceAccount = require("./permissions.json");
+var serviceAccount = require("./permissions.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -20,42 +20,74 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-app.post('/title', async (req,res) => {
-    try {
+app.post('/title', (req,res) => {
+    (async ()=> {
         const document = db.collection("system").doc("variables");
         let item = await document.get();
 
-        let currentPrompt = item.exists ? item.data().prompt : prompt;
+        if (item.exists) {
+            let response = item.data();
+            prompt = response.prompt;
+        }
 
-        let titleData = await getHeadlineFromDatabase(req.body.domain, req.body.title, req.body.articleText, currentPrompt);
-        res.status(titleData.status).send(titleData.data);
+        var utf8Domain = encodeURIComponent(req.body.domain);
+        var enc_domain = btoa(utf8Domain);
+        var utf8Title = encodeURIComponent(req.body.title);
+        var enc_title = btoa(utf8Title);
 
-    } catch(error) {
-        console.error(error);
-        res.status(500).send(error);
-    }
+        try{
+            const document = db.collection(enc_domain).doc(enc_title);
+            let item = await document.get();
+            let response = item.data();
+
+            if(!item.exists){
+                if(await addTitle(req.body.domain, req.body.title, req.body.articleText)){
+                    const document = db.collection(enc_domain).doc(enc_title);
+                    let item1 = await document.get();
+                    let response1 = item1.data();
+                    return res.status(201).send(response1);
+                }
+                else{
+                    return res.status(500).send(error);
+                }
+            }
+
+            return res.status(200).send(response);
+        }catch(error){
+            console.log(error);
+            
+            return res.status(500).send(error);
+        }
+    })();
 });
 
-async function getHeadlineFromDatabase(domain, title, articleText, currentPrompt) {
-    const document = db.collection(domain).doc(title);
-    let item = await document.get();
+async function getGPTTitle(articleText){
+    const configuration = new Configuration({
+        apiKey: process.env.OPENAI_API_KEY,
+    });
+    const openai = new OpenAIApi(configuration);
 
-    if (!item.exists) {
-        const success = await addHeadlineToDatabase(domain, title, articleText, currentPrompt);
-        if (!success) throw new Error("Error adding title");
+    const completion = await openai.createChatCompletion({
+        model: "gpt-3.5-turbo",
+        messages: [{"role": "user", "content": prompt + articleText}]
+    });
 
-        item = await document.get();
-        return { status: 201, data: item.data() };
-    }
-
-    return { status: 200, data: item.data() };
+    return completion.data.choices[0].message.content;
 }
 
-async function addHeadlineToDatabase(domain, title, articleText, currentPrompt){
+async function addTitle(domain, title, articleText){
     try {
-        let newTitle = await getGPTTitle(articleText, currentPrompt);
-        await db.collection(domain).doc(title).set({ newTitle });
+        var nt = await getGPTTitle(articleText);
 
+        var utf8Domain = encodeURIComponent(domain);
+        var enc_domain = btoa(utf8Domain);
+        var utf8Title = encodeURIComponent(title);
+        var enc_title = btoa(utf8Title);
+
+        await db.collection(enc_domain).doc(enc_title).set({
+            newTitle: nt,
+        });
+        
         console.log("New title saved in database");
         return true;
     } catch (error) {
@@ -64,18 +96,8 @@ async function addHeadlineToDatabase(domain, title, articleText, currentPrompt){
     }
 }
 
-async function getGPTTitle(articleText, currentPrompt){
-    const configuration = new Configuration({
-        apiKey: process.env.OPENAI_API_KEY,
-    });
-    const openai = new OpenAIApi(configuration);
-
-    const completion = await openai.createChatCompletion({
-        model: "gpt-3.5-turbo",
-        messages: [{"role": "user", "content": currentPrompt + articleText}]
-    });
-
-    return completion.data.choices[0].message.content;
+function btoa(string){
+    return Buffer.from(string).toString('base64');
 }
 
 app.listen(port, ()=>{
