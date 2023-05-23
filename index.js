@@ -12,7 +12,7 @@ app.use(express.json());
 const prompt = "Give me a headline to this article. Your response should be only the headline and nothing else. Here's the article: ";
 
 let serviceAccount = {
-    "type": process.env.TYPE,
+    "type": "service_account",
     "project_id": process.env.PROJECT_ID,
     "private_key_id": process.env.PRIVATE_KEY_ID,
     "private_key": process.env.PRIVATE_KEY.replace(/\\n/g, '\n'),
@@ -22,7 +22,7 @@ let serviceAccount = {
     "token_uri": process.env.TOKEN_URI,
     "auth_provider_x509_cert_url": process.env.AUTH_PROVIDER_X509_CERT_URL,
     "client_x509_cert_url": process.env.CLIENT_X509_CERT_URL,
-    "universe_domain": process.env.UNIVERSE_DOMAIN
+    "universe_domain": "googleapis.com"
 }
 
 admin.initializeApp({
