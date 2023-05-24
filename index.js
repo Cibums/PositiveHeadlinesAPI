@@ -50,8 +50,13 @@ app.post('/title', async (req,res) => {
     }
 });
 
+app.get('/title', async (req,res) => {
+    res.status(501).send("This endpoint is not implemented yet");
+    return;
+});
+
 async function getHeadlineFromDatabase(enc_domain, enc_title, articleText, currentPrompt) {
-    const document = db.collection(enc_domain).doc(enc_title);
+    const document = db.collection("domains").doc(enc_domain).collection("headlines").doc(enc_title);
     let item = await document.get();
 
     if (!item.exists) {
@@ -68,7 +73,7 @@ async function getHeadlineFromDatabase(enc_domain, enc_title, articleText, curre
 async function addHeadlineToDatabase(enc_domain, enc_title, articleText, currentPrompt){
     try {
         let newTitle = await getGPTTitle(articleText, currentPrompt);
-        await db.collection(enc_domain).doc(enc_title).set({ newTitle });
+        await db.collection("domains").doc(enc_domain).collection("headlines").doc(enc_title).set({ newTitle });
 
         console.log("New title saved in database");
         return true;
