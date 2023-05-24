@@ -55,25 +55,8 @@ app.get('/title', async (req,res) => {
         
         await headlinesCollection.get()
         .then((querySnapshot) => {
-
-            var headlines = [];
-
-            querySnapshot.forEach((doc) => {
-                let data = doc.data();
-                headlines.push(
-                    {
-                        enc_title: data.enc_title,
-                        enc_domain: data.enc_domain,
-                        newTitle: data.newTitle
-                    }
-                );
-            });
-
-            if(headlines.length !== 0){
-                res.status(200).send(headlines);
-            }
-
-            res.status(204).send();
+            var response = getHeadlines(querySnapshot);
+            res.status(response.status).send(response.data);
         })
         .catch((error) => {
             res.status(error.status).send(error);
@@ -95,24 +78,8 @@ app.get('/title/:domain', async (req,res) => {
         
         await headlinesCollection.get().where("enc_domain", "==", enc_domain)
         .then((querySnapshot) => {
-
-            var headlines = [];
-
-            querySnapshot.forEach((doc) => {
-                let data = doc.data();
-                headlines.push(
-                    {
-                        enc_title: data.enc_title,
-                        newTitle: data.newTitle
-                    }
-                );
-            });
-
-            if(headlines.length !== 0){
-                res.status(200).send(headlines);
-            }
-
-            res.status(204).send();
+            var response = getHeadlines(querySnapshot);
+            res.status(response.status).send(response.data);
         })
         .catch((error) => {
             res.status(error.status).send(error);
@@ -124,6 +91,27 @@ app.get('/title/:domain', async (req,res) => {
         res.status(error.status).send(error);
     }
 });
+
+function getHeadlines(querySnapshot){
+    var headlines = [];
+
+    querySnapshot.forEach((doc) => {
+        let data = doc.data();
+        headlines.push(
+            {
+                enc_title: data.enc_title,
+                enc_domain: data.enc_domain,
+                newTitle: data.newTitle
+            }
+        );
+    });
+
+    if(headlines.length !== 0){
+        return { status: 200, data: headlines }
+    }
+
+    return { status: 204, data: undefined }
+}
 
 async function getHeadlineFromDatabase(domain, title, articleText, currentPrompt) {
 
