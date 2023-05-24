@@ -61,8 +61,6 @@ app.get('/title', async (req,res) => {
         .catch((error) => {
             res.status(error.status).send(error);
         });
-
-        res.status(500).send("Something went wrong");
     } catch(error) {
         console.error(error);
         res.status(error.status).send(error);
@@ -84,8 +82,6 @@ app.get('/title/:domain', async (req,res) => {
         .catch((error) => {
             res.status(error.status).send(error);
         });
-
-        res.status(500).send("Something went wrong");
     } catch(error) {
         console.error(error);
         res.status(error.status).send(error);
