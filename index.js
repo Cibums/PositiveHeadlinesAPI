@@ -50,16 +50,8 @@ app.post('/title', async (req,res) => {
 
 //Gets a list of all headlines
 app.get('/title', async (req,res) => {
-    res.status(501).send("This endpoint is not implemented yet");
-    return;
-});
-
-//Gets a list of all headlines 
-app.get('/title/:domain', async (req,res) => {
-    let enc_domain = btoa(encodeURIComponent(req.params.domain));
-
     try {
-        const headlinesCollection = db.collection("domains").doc(enc_domain).collection("headlines");
+        const headlinesCollection = db.collection("headlines");
         
         await headlinesCollection.get()
         .then((querySnapshot) => {
@@ -70,8 +62,47 @@ app.get('/title/:domain', async (req,res) => {
                 let data = doc.data();
                 headlines.push(
                     {
-                        enc_title: doc.id,
-                        enc_domain: data.domain,
+                        enc_title: data.enc_title,
+                        enc_domain: data.enc_domain,
+                        newTitle: data.newTitle
+                    }
+                );
+            });
+
+            if(headlines.length !== 0){
+                res.status(200).send(headlines);
+            }
+
+            res.status(204).send();
+        })
+        .catch((error) => {
+            res.status(error.status).send(error);
+        });
+
+        res.status(500).send("Something went wrong");
+    } catch(error) {
+        console.error(error);
+        res.status(error.status).send(error);
+    }
+});
+
+//Gets a list of all headlines 
+app.get('/title/:domain', async (req,res) => {
+    let enc_domain = btoa(encodeURIComponent(req.params.domain));
+
+    try {
+        const headlinesCollection = db.collection("headlines");
+        
+        await headlinesCollection.get().where("enc_domain", "==", enc_domain)
+        .then((querySnapshot) => {
+
+            var headlines = [];
+
+            querySnapshot.forEach((doc) => {
+                let data = doc.data();
+                headlines.push(
+                    {
+                        enc_title: data.enc_title,
                         newTitle: data.newTitle
                     }
                 );
@@ -99,7 +130,7 @@ async function getHeadlineFromDatabase(domain, title, articleText, currentPrompt
     let enc_domain = btoa(encodeURIComponent(domain));
     let enc_title = btoa(encodeURIComponent(title));
 
-    const document = db.collection("domains").doc(enc_domain).collection("headlines").doc(enc_title);
+    const document = db.collection("headlines").doc(enc_domain + enc_title);
     let item = await document.get();
 
     if (!item.exists) {
@@ -116,10 +147,11 @@ async function getHeadlineFromDatabase(domain, title, articleText, currentPrompt
 async function addHeadlineToDatabase(domain, enc_domain, enc_title, articleText, currentPrompt){
     try {
         let newTitle = await getGPTTitle(articleText, currentPrompt);
-        await db.collection("domains").doc(enc_domain).collection("headlines").doc(enc_title).set(
+        await db.collection("headlines").doc(enc_domain + enc_title).set(
             { 
                 "newTitle": newTitle,
-                "domain": domain
+                "enc_domain": enc_domain,
+                "enc_title": enc_title,
             }
         );
 
