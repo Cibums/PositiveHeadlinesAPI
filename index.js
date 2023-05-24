@@ -76,7 +76,7 @@ app.get('/title/:domain', async (req,res) => {
     try {
         const headlinesCollection = db.collection("headlines");
         
-        await headlinesCollection.get().where("enc_domain", "==", enc_domain)
+        await headlinesCollection.where("enc_domain", "==", enc_domain).get()
         .then((querySnapshot) => {
             var response = getHeadlines(querySnapshot);
             res.status(response.status).send(response.data);
